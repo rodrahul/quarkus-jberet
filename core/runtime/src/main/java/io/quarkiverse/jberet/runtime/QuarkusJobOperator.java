@@ -5,14 +5,20 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import javax.batch.operations.JobExecutionAlreadyCompleteException;
+import javax.batch.operations.JobExecutionNotMostRecentException;
+import javax.batch.operations.JobRestartException;
 import javax.batch.operations.JobSecurityException;
 import javax.batch.operations.JobStartException;
 import javax.batch.operations.NoSuchJobException;
+import javax.batch.operations.NoSuchJobExecutionException;
 import javax.transaction.TransactionManager;
 
 import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jberet.job.model.Job;
 import org.jberet.operations.AbstractJobOperator;
+import org.jberet.runtime.JobExecutionImpl;
+import org.jberet.runtime.JobInstanceImpl;
 import org.jberet.spi.BatchEnvironment;
 
 import io.quarkiverse.jberet.runtime.JBeretConfig.JobConfig;
@@ -60,6 +66,26 @@ public class QuarkusJobOperator extends AbstractJobOperator {
             return super.start(jobDefinition, jobParameters, user);
         } else {
             throw new NoSuchJobException("Job with xml name " + jobXMLName + " was not found");
+        }
+    }
+
+    @Override
+    public long restart(long executionId, Properties restartParameters) throws JobExecutionAlreadyCompleteException,
+            NoSuchJobExecutionException, JobExecutionNotMostRecentException, JobRestartException, JobSecurityException {
+
+        JobExecutionImpl originalToRestart = (JobExecutionImpl) getJobRepository().getJobExecution(executionId);
+        JobInstanceImpl jobInstance = originalToRestart.getJobInstance();
+        Job jobDefinition = jobInstance.getUnsubstitutedJob();
+        if (jobDefinition == null) {
+            System.out.println("JOB IS NULL");
+            jobDefinition = jobs.get("assignItemToUsers");
+            jobInstance.setUnsubstitutedJob(jobDefinition);
+        }
+
+        if (jobDefinition != null) {
+            return super.restart(executionId, restartParameters);
+        } else {
+            throw new NoSuchJobException("Job with executionId " + executionId + " was not found");
         }
     }
 
