@@ -77,7 +77,6 @@ public class QuarkusJobOperator extends AbstractJobOperator {
         JobInstanceImpl jobInstance = originalToRestart.getJobInstance();
         Job jobDefinition = jobInstance.getUnsubstitutedJob();
         if (jobDefinition == null) {
-            System.out.println("JOB IS NULL");
             jobDefinition = jobs.get("assignItemToUsers");
             jobInstance.setUnsubstitutedJob(jobDefinition);
         }
